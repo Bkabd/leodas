@@ -1,0 +1,80 @@
+clc;clear all close all;
+f=5;
+t=0:0.01:1;
+b=[1,0,1,1,1,0,0,1,1,1];
+disp(b);
+c=cos(2*pi*f*t);
+mod_sig=[];carr_sig1=[];org_sig=[];b_nrz=[];carr_sig2=[];
+
+%ORIGINAL SIGNAL:
+for i=1:length(b)
+    if (b(i)==1)
+        org_sig=[org_sig ones(1,length(t))];
+    else
+        org_sig=[org_sig zeros(1,length(t))];
+    end
+end
+
+for i=1:length(b)
+    if (b(i)==0)
+        b_nrz=[b_nrz -1];
+    else
+        b_nrz=[b_nrz 1];
+    end
+end
+
+for j=1:2:length(b_nrz)
+    m1=b_nrz(j)*cos(2*pi*f*t);
+    m2=b_nrz(j+1)*sin(2*pi*f*t);
+    m=m1+m2;
+    mod_sig=[mod_sig m];
+
+    carr_sig1=[carr_sig1 cos((2*pi*t*f))];
+    carr_sig2=[carr_sig2 sin((2*pi*t*f))];
+end
+%ADDING NOISE IN THE SIGNAL:
+noi_sig=awgn(mod_sig,20); %SNR=2s0db
+
+%DEMODULATING THE SIGNAL:
+demod_sig1=(noi_sig).*(carr_sig1);
+demod_sig2=(noi_sig).*(carr_sig2);
+
+subplot(511);
+plot(org_sig);xlabel("time");ylabel("Amplitude");
+title("ORIGINAL SIGNAL");
+subplot(512);
+plot(mod_sig);xlabel("time");ylabel("Amplitude");
+title("QPSK MODULATED SIGNAL");
+subplot(513);
+plot(noi_sig);xlabel("time");ylabel("Amplitude");
+title("QPSK MODULATED SIGNAL WITH NOISE");
+subplot(514);
+plot(demod_sig1);xlabel("time");ylabel("Amplitude");
+title("DEMODULATED SIGNAL-1");
+subplot(515);
+plot(demod_sig2);xlabel("time");ylabel("Amplitude");
+title("DEMODULATED SIGNAL-2");
+
+----------------------------------------------------------------------------------------------------------------------------------
+BER VS SNR
+
+clc;clear all;close all;
+n=1e7;
+b=randi([0,1],n,1);
+qpskmod = comm.QPSKModulator;
+qpskdemod = comm.QPSKDemodulator;
+b_mod=qpskmod(b);
+SNR=0:1:10;ber=[];
+for snr=0:10
+    b_nois=awgn(b_mod,snr);
+    b_demod=qpskdemod(b_nois);
+    err=biterr(b,b_demod);
+    rate=err/n;
+    ber=[ber rate];
+end
+semilogy(0:1:10,ber);
+grid on;
+
+
+
+
